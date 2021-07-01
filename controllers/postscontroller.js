@@ -10,26 +10,26 @@ router.get('/practice', (req, res) => {
 
 // Post new post (requires sign in) <CREATE>
 router.post('/create', middleware.validateSession, async (req, res) => {
-    const { gamerTag, playersNeeded, micRequired, type, comments } = req.body;
-    // const { id } = req.user;
+    const { gamerTag, playersNeeded, micRequired, type, comments, userId } = req.body;
     const postEntry = {
         gamerTag,
         playersNeeded,
         micRequired,
         type,
-        comments
+        comments,
+        userId: req.user.id
     }
     try {
-        const newPost = await PostsModel.create(postEntry);
+        const newPost = await PostsModel.create(postEntry, userId);
         res.status(200).json(newPost);
     } catch (err) {
-            res.status(500).json({ msg: `On no! Server error: ${err}` })
-        }
+        res.status(500).json({ msg: `On no! Server error: ${err}` })
+    }
 });
 
 // get all post entries <READ>
 
-router.get('/all', async (req, res) => {
+router.get('/all', validateSession, async (req, res) => {
     try {
         const allPosts = await PostsModel.findAll();
         res.status(200).json(allPosts);
@@ -40,24 +40,42 @@ router.get('/all', async (req, res) => {
     }
 });
 
+// get my posts
+router.get('/mine', validateSession, async (req, res) => {
+    try {
+        const  id  = req.user.id
+        const myPosts = await PostsModel.findAll({
+            where: {userId: id}
+        });
+        res.status(200).json(myPosts);
+    } catch (err) {
+        res.status(500).json({
+            msg: `Oh no! Failed to find posts. Error: ${err}`
+        })
+    }
+});
+
 
 //Edit
-router.put('/:gamerTag', validateSession, async (req, res) => {
+router.put('/update/:postsId', validateSession, async (req, res) => {
     try {
+        const { id } = req.user
+        const { postsId } = req.params
         const { gamerTag, playersNeeded, micRequired, type, comments } = req.body;
 
-        const updatedPost = await PostsModel.update({
+
+        const updatePost = await PostsModel.update({
             gamerTag,
             playersNeeded,
             micRequired,
             type,
-            comments  
+            comments
         }, {
-            where: { gamerTag: req.params.gamerTag }
+            where: { userId: id, id: postsId }
         });
         res.status(200).json({
             msg: 'post updated!',
-            updatedPost
+            updatePost: updatePost == 0 ? `none` : updatePost
         });
     } catch (err) {
         res.status(500).json({ msg: `Error: ${err}` })
@@ -65,16 +83,18 @@ router.put('/:gamerTag', validateSession, async (req, res) => {
 });
 
 
-router.delete('/:gamerTag', validateSession, async(req, res)=>{
-    try{
-        const locatedPost = await PostsModel.destroy({
-            where: {gamerTag: req.params.gamerTag}
+router.delete('/delete/:postsId', validateSession, async (req, res) => {
+    const { id } = req.user
+    const { postsId } = req.params
+    try {
+        const deletePost = await PostsModel.destroy({
+            where: { userId: id, id: postsId }
         })
         res.status(200).json({
             message: 'Post successfully deleted',
-            deletedPost: locatedPost
-            })
-    } catch(err) {
+            deletedPost: deletePost == 0 ? `none` : deletePost
+        })
+    } catch (err) {
         res.status(500).json({
             message: `Failed to delete log: ${err}`
         })

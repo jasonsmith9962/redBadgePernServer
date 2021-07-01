@@ -14,8 +14,8 @@ const Posts = db.define('posts', {//3
         allowNull: false
     },
     type: {
-        type: DataTypes.ENUM,
-        values: ['casual', 'ranked'],
+        type: DataTypes.ENUM({
+        values: ['casual', 'ranked']}),
         allowNull: false
     },
     comments: {

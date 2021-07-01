@@ -12,4 +12,4 @@ UserModel.hasOne(StatsModel);
 StatsModel.belongsTo(UserModel);
 
 
-module.exports = {UserModel, StatsModel, PostsModel}
+module.exports =  {UserModel, StatsModel, PostsModel}

@@ -1,19 +1,21 @@
 const router = require('express').Router();
-const { UserModel } = require('../models');
+const { UserModel, PostsModel, StatsModel } = require('../models');
 const { UniqueConstraintError } = require('sequelize/lib/errors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const validateSession = require('../middleware/validate-session')
+const validateRole = require('../middleware/validate-role')
 
 router.post('/register', async(req, res)=>{
-    let { emailAddress, password } = req.body.user;
+    let { emailAddress, password, role } = req.body.user;
     try {
         const User = await UserModel.create({
             emailAddress,
             password: bcrypt.hashSync(password, 13),
+            role
         });
         
-        let token = jwt.sign({ id: User.id }, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 168})
+        let token = jwt.sign({ id: User.id, role: User.admin }, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 168})
 
         res.status(201).json({
             msg: 'User successfully registered!',
@@ -46,7 +48,7 @@ router.post('/login', async (req, res) =>{
         if(loginUser) {
             let passwordComparison = await bcrypt.compare(password, loginUser.password);
             if(passwordComparison){
-                let token = jwt.sign({ id: loginUser.id }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 12})
+                let token = jwt.sign({ id: loginUser.id, role: loginUser.admin }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 12})
                 res.status(200).json({
                     user: loginUser,
                     message: "User successfully logged in!",
@@ -69,14 +71,49 @@ router.post('/login', async (req, res) =>{
     }
 });
 
-router.delete('/:emailAddress', validateSession, async(req, res)=>{
+router.delete('/delete', validateSession, async(req, res)=>{
     try{
+        const locatedStats = await StatsModel.destroy({
+            where: {userId: req.user.id}
+        })
+        const locatedPosts = await PostsModel.destroy({
+            where: {userId: req.user.id}
+        })
         const locatedUser = await UserModel.destroy({
-            where: {emailAddress: req.params.emailAddress}
+            where: {id: req.user.id}
         })
         res.status(200).json({
             message: 'User successfully deleted',
-            deletedUser: locatedUser
+            deletedUser: locatedUser,
+            deletedPosts: locatedPosts == 0 ? `no posts to delete` : locatedPosts,
+            deletedStats: locatedStats == 0 ? `no stats to delete` : locatedStats
+            })
+    } catch(err) {
+        res.status(500).json({
+            message: `Failed to delete User: ${err}`
+        })
+    }
+})
+
+//!admin delete path
+router.delete('/delete/admin/:userId', validateRole, async(req, res)=>{
+    const {userId} = req.params
+    try{
+
+        const locatedStats = await StatsModel.destroy({
+            where: {userId: userId}
+        })
+        const locatedPosts = await PostsModel.destroy({
+            where: {userId: userId}
+        })
+        const locatedUser = await UserModel.destroy({
+            where: {id: userId}
+        })
+        res.status(200).json({
+            message: 'User successfully deleted',
+            deletedUser: locatedUser,
+            deletedPosts: locatedPosts == 0 ? `no posts to delete` : locatedPosts,
+            deletedStats: locatedStats == 0 ? `no stats to delete` : locatedStats
             })
     } catch(err) {
         res.status(500).json({
