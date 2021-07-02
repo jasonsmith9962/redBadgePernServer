@@ -4,9 +4,9 @@ const { UniqueConstraintError } = require('sequelize/lib/errors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const validateSession = require('../middleware/validate-session')
-const validateRole = require('../middleware/validate-role')
 
-router.post('/register', async(req, res)=>{
+
+router.post('/register', async (req, res) => {
     let { emailAddress, password, role } = req.body.user;
     try {
         const User = await UserModel.create({
@@ -14,8 +14,8 @@ router.post('/register', async(req, res)=>{
             password: bcrypt.hashSync(password, 13),
             role
         });
-        
-        let token = jwt.sign({ id: User.id, role: User.admin }, process.env.JWT_SECRET, {expiresIn: 60 * 60 * 168})
+
+        let token = jwt.sign({ id: User.id, role: User.admin }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 168 })
 
         res.status(201).json({
             msg: 'User successfully registered!',
@@ -23,7 +23,7 @@ router.post('/register', async(req, res)=>{
             sessionToken: token
         });
     } catch (err) {
-        if (err instanceof UniqueConstraintError){
+        if (err instanceof UniqueConstraintError) {
             res.status(409).json({
                 msg: 'Email already registered! Did you mean to login?'
             });
@@ -36,7 +36,7 @@ router.post('/register', async(req, res)=>{
 });
 
 // login user
-router.post('/login', async (req, res) =>{
+router.post('/login', async (req, res) => {
     let { emailAddress, password } = req.body.user;
     try {
         let loginUser = await UserModel.findOne({
@@ -45,10 +45,10 @@ router.post('/login', async (req, res) =>{
             },
         });
 
-        if(loginUser) {
+        if (loginUser) {
             let passwordComparison = await bcrypt.compare(password, loginUser.password);
-            if(passwordComparison){
-                let token = jwt.sign({ id: loginUser.id, role: loginUser.admin }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 12})
+            if (passwordComparison) {
+                let token = jwt.sign({ id: loginUser.id, role: loginUser.admin }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 12 })
                 res.status(200).json({
                     user: loginUser,
                     message: "User successfully logged in!",
@@ -71,24 +71,24 @@ router.post('/login', async (req, res) =>{
     }
 });
 
-router.delete('/delete', validateSession, async(req, res)=>{
-    try{
+router.delete('/delete', validateSession, async (req, res) => {
+    try {
         const locatedStats = await StatsModel.destroy({
-            where: {userId: req.user.id}
+            where: { userId: req.user.id }
         })
         const locatedPosts = await PostsModel.destroy({
-            where: {userId: req.user.id}
+            where: { userId: req.user.id }
         })
         const locatedUser = await UserModel.destroy({
-            where: {id: req.user.id}
+            where: { id: req.user.id }
         })
         res.status(200).json({
             message: 'User successfully deleted',
             deletedUser: locatedUser,
             deletedPosts: locatedPosts == 0 ? `no posts to delete` : locatedPosts,
             deletedStats: locatedStats == 0 ? `no stats to delete` : locatedStats
-            })
-    } catch(err) {
+        })
+    } catch (err) {
         res.status(500).json({
             message: `Failed to delete User: ${err}`
         })
@@ -96,28 +96,34 @@ router.delete('/delete', validateSession, async(req, res)=>{
 })
 
 //!admin delete path
-router.delete('/delete/admin/:userId', validateRole, async(req, res)=>{
-    const {userId} = req.params
-    try{
+router.delete('/delete/admin/:userId', validateSession, async (req, res) => {
+    const { userId } = req.params
+    if (req.user.role === 'admin') {
+        try {
 
-        const locatedStats = await StatsModel.destroy({
-            where: {userId: userId}
-        })
-        const locatedPosts = await PostsModel.destroy({
-            where: {userId: userId}
-        })
-        const locatedUser = await UserModel.destroy({
-            where: {id: userId}
-        })
-        res.status(200).json({
-            message: 'User successfully deleted',
-            deletedUser: locatedUser,
-            deletedPosts: locatedPosts == 0 ? `no posts to delete` : locatedPosts,
-            deletedStats: locatedStats == 0 ? `no stats to delete` : locatedStats
+            const locatedStats = await StatsModel.destroy({
+                where: { userId: userId }
             })
-    } catch(err) {
-        res.status(500).json({
-            message: `Failed to delete User: ${err}`
+            const locatedPosts = await PostsModel.destroy({
+                where: { userId: userId }
+            })
+            const locatedUser = await UserModel.destroy({
+                where: { id: userId }
+            })
+            res.status(200).json({
+                message: 'User successfully deleted',
+                deletedUser: locatedUser,
+                deletedPosts: locatedPosts == 0 ? `no posts to delete` : locatedPosts,
+                deletedStats: locatedStats == 0 ? `no stats to delete` : locatedStats
+            })
+        } catch (err) {
+            res.status(500).json({
+                message: `Failed to delete User: ${err}`
+            })
+        }
+    } else {
+        res.status(401).json({
+            message: `Unauthorized`
         })
     }
 })

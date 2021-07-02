@@ -2,14 +2,13 @@ const Express = require('express');
 const router = Express.Router();
 const validateSession = require('../middleware/validate-session');
 const { PostsModel } = require('../models');
-const middleware = require('../middleware')
 
 router.get('/practice', (req, res) => {
     res.send('This is a test route.')
 });
 
 // Post new post (requires sign in) <CREATE>
-router.post('/create', middleware.validateSession, async (req, res) => {
+router.post('/create', validateSession, async (req, res) => {
     const { gamerTag, playersNeeded, micRequired, type, comments, userId } = req.body;
     const postEntry = {
         gamerTag,
@@ -43,9 +42,9 @@ router.get('/all', validateSession, async (req, res) => {
 // get my posts
 router.get('/mine', validateSession, async (req, res) => {
     try {
-        const  id  = req.user.id
+        const id = req.user.id
         const myPosts = await PostsModel.findAll({
-            where: {userId: id}
+            where: { userId: id }
         });
         res.status(200).json(myPosts);
     } catch (err) {
@@ -101,6 +100,30 @@ router.delete('/delete/:postsId', validateSession, async (req, res) => {
     }
 })
 
+//!admin post delete
+router.delete('/delete/admin/:postsId', validateSession, async (req, res) => {
+    
+    const { postsId } = req.params
+    if (req.user.role === 'admin') {
+        try {
+            const deletePost = await PostsModel.destroy({
+                where: { id: postsId }
+            })
+            res.status(200).json({
+                message: 'Post successfully deleted',
+                deletedPost: deletePost == 0 ? `none` : deletePost
+            })
+        } catch (err) {
+            res.status(500).json({
+                message: `Failed to delete log: ${err}`
+            })
+        }
+    } else {
+        res.status(401).json({
+            message: `Unauthorized`
+        })
+    }
+})
 
 
 
