@@ -63,10 +63,10 @@ router.get('/:statsId', validateSession, async (req, res) => {
 
 
 //Edit stats
-router.put('/update', validateSession, async (req, res) => {
+router.put('/update/:statsId', validateSession, async (req, res) => {
     try {
         const {id} = req.user
-        // const { statsId } = req.params
+        const { statsId } = req.params
         const { gamerTag, gamesPlayed, gamesWon, kdRatio } = req.body;
 
         const updateStats = await StatsModel.update({
@@ -75,7 +75,7 @@ router.put('/update', validateSession, async (req, res) => {
             gamesWon,
             kdRatio
         }, {
-            where: { userId: id }
+            where: { userId: id, id: statsId }
         });
         res.status(200).json({
             msg: 'stats updated!',
