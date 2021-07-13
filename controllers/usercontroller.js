@@ -15,7 +15,7 @@ router.post('/register', async (req, res) => {
             role
         });
 
-        let token = jwt.sign({ id: User.id, role: User.admin }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 168 })
+        let token = jwt.sign({ id: User.id, role: User.admin }, process.env.JWT_SECRET, { expiresIn: 60 * 60 * 12 })
 
         res.status(201).json({
             msg: 'User successfully registered!',
