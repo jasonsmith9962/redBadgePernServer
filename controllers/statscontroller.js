@@ -56,12 +56,12 @@ router.get('/mine', validateSession, async (req, res) => {
 });
 
 // get stats by statsId
-router.get('/:statsId', validateSession, async (req, res) => {
+router.get('/one/:id', validateSession, async (req, res) => {
     try {
-        const {statsId} = req.params
+        const id = req.params.id
         
-        const Stats = await StatsModel.findAll({
-            where: {id: statsId}
+        const Stats = await StatsModel.findOne({
+            where: {id: id}
         });
         res.status(200).json(Stats);
     } catch (err) {
