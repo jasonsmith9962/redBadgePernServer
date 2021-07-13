@@ -23,7 +23,20 @@ router.post('/create', validateSession, async (req, res) => {
         const newStats = await StatsModel.create(statsEntry, userId);
         res.status(200).json(newStats);
     } catch (err) {
-        res.status(500).json({ msg: `On no! Server error: ${err}` })
+        res.status(500).json({ msg: `Server error: ${err}` })
+    }
+});
+
+// get all post entries <READ>
+
+router.get('/all', validateSession, async (req, res) => {
+    try {
+        const allStats = await StatsModel.findAll();
+        res.status(200).json(allStats);
+    } catch (err) {
+        res.status(500).json({
+            msg: `Failed to find stats. Error: ${err}`
+        })
     }
 });
 
@@ -37,7 +50,7 @@ router.get('/mine', validateSession, async (req, res) => {
         res.status(200).json(myStats);
     } catch (err) {
         res.status(500).json({
-            msg: `Oh no! Failed to find posts. Error: ${err}`
+            msg: `Failed to find posts. Error: ${err}`
         })
     }
 });
@@ -53,7 +66,7 @@ router.get('/:statsId', validateSession, async (req, res) => {
         res.status(200).json(Stats);
     } catch (err) {
         res.status(500).json({
-            msg: `Oh no! Failed to find posts. Error: ${err}`
+            msg: `Failed to find posts. Error: ${err}`
         })
     }
 });

@@ -34,7 +34,7 @@ router.get('/all', validateSession, async (req, res) => {
         res.status(200).json(allPosts);
     } catch (err) {
         res.status(500).json({
-            msg: `Oh no! Failed to find posts. Error: ${err}`
+            msg: `Failed to find posts. Error: ${err}`
         })
     }
 });
@@ -49,7 +49,7 @@ router.get('/mine', validateSession, async (req, res) => {
         res.status(200).json(myPosts);
     } catch (err) {
         res.status(500).json({
-            msg: `Oh no! Failed to find posts. Error: ${err}`
+            msg: `Failed to find posts. Error: ${err}`
         })
     }
 });

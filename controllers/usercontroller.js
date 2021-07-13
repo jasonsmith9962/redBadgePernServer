@@ -29,7 +29,7 @@ router.post('/register', async (req, res) => {
             });
         } else {
             res.status(500).json({
-                msg: `Oh no! Server failed to register user. err=${err}`
+                msg: `Server failed to register user. err=${err}`
             })
         }
     }
