@@ -53,6 +53,20 @@ router.get('/mine', validateSession, async (req, res) => {
         })
     }
 });
+//get post by id.
+router.get('/one/:id', validateSession, async (req, res) => {
+    try {
+        const id = req.params.id
+        const Post = await PostsModel.findOne({
+            where: { id: id }
+        });
+        res.status(200).json(Post);
+    } catch (err) {
+        res.status(500).json({
+            msg: `Failed to find post. Error: ${err}`
+        })
+    }
+});
 
 
 //Edit
